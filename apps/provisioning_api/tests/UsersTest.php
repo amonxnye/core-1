@@ -36,7 +36,6 @@ use OCP\API;
 use OCP\ILogger;
 use OCP\IUserManager;
 use OCP\IUserSession;
-use PHPUnit\Framework\MockObject\MockObject;
 use Test\TestCase as OriginalTest;
 use OCP\IUser;
 use OC\SubAdmin;
@@ -44,20 +43,20 @@ use OCP\IGroup;
 use OC\Authentication\TwoFactorAuth\Manager;
 
 class UsersTest extends OriginalTest {
-	
-	/** @var IUserManager | PHPUnit\Framework\MockObject\MockObject */
+
+	/** @var IUserManager | \PHPUnit_Framework_MockObject_MockObject */
 	protected $userManager;
-	/** @var \OC\Group\Manager | PHPUnit\Framework\MockObject\MockObject */
+	/** @var \OC\Group\Manager | \PHPUnit_Framework_MockObject_MockObject */
 	protected $groupManager;
-	/** @var IUserSession | PHPUnit\Framework\MockObject\MockObject */
+	/** @var IUserSession | \PHPUnit_Framework_MockObject_MockObject */
 	protected $userSession;
-	/** @var ILogger | PHPUnit\Framework\MockObject\MockObject */
+	/** @var ILogger | \PHPUnit_Framework_MockObject_MockObject */
 	protected $logger;
-	/** @var Users | PHPUnit\Framework\MockObject\MockObject */
+	/** @var Users | \PHPUnit_Framework_MockObject_MockObject */
 	protected $api;
-	/** @var \OC\Authentication\TwoFactorAuth\Manager | PHPUnit\Framework\MockObject\MockObject */
+	/** @var \OC\Authentication\TwoFactorAuth\Manager | \PHPUnit_Framework_MockObject_MockObject */
 	private $twoFactorAuthManager;
-	/** @var CreateUserService | PHPUnit\Framework\MockObject\MockObject */
+	/** @var CreateUserService | \PHPUnit_Framework_MockObject_MockObject */
 	private $createUserService;
 
 	protected function tearDown(): void {
@@ -259,11 +258,6 @@ class UsersTest extends OriginalTest {
 	public function testAddUserNonExistingGroup() {
 		$_POST['userid'] = 'NewUser';
 		$_POST['groups'] = ['NonExistingGroup'];
-		$this->userManager
-			->expects($this->once())
-			->method('userExists')
-			->with('NewUser')
-			->willReturn(false);
 		$loggedInUser = $this->createMock(IUser::class);
 		$loggedInUser
 			->expects($this->once())
@@ -283,44 +277,6 @@ class UsersTest extends OriginalTest {
 			->method('groupExists')
 			->with('NonExistingGroup')
 			->willReturn(false);
-
-		$expected = new Result(null, 104, 'group NonExistingGroup does not exist');
-		$this->assertEquals($expected, $this->api->addUser());
-	}
-
-	public function testAddUserExistingGroupNonExistingGroup() {
-		$_POST['userid'] = 'NewUser';
-		$_POST['groups'] = ['ExistingGroup', 'NonExistingGroup'];
-		$this->userManager
-			->expects($this->once())
-			->method('userExists')
-			->with('NewUser')
-			->willReturn(false);
-		$loggedInUser = $this->createMock(IUser::class);
-		$loggedInUser
-			->expects($this->once())
-			->method('getUID')
-			->will($this->returnValue('adminUser'));
-		$this->userSession
-			->expects($this->once())
-			->method('getUser')
-			->will($this->returnValue($loggedInUser));
-		$this->groupManager
-			->expects($this->once())
-			->method('isAdmin')
-			->with('adminUser')
-			->willReturn(true);
-		$this->groupManager
-			->expects($this->exactly(2))
-			->method('groupExists')
-			->withConsecutive(
-				['ExistingGroup'],
-				['NonExistingGroup']
-			)
-			->will($this->returnValueMap([
-				['ExistingGroup', true],
-				['NonExistingGroup', false]
-			]));
 
 		$expected = new Result(null, 104, 'group NonExistingGroup does not exist');
 		$this->assertEquals($expected, $this->api->addUser());

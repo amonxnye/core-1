@@ -83,8 +83,7 @@ class UserSendMailService {
 	public function generateTokenAndSendMail($userId, $email) {
 		$fromMailAddress = Util::getDefaultEmailAddress('no-reply');
 		$token = $this->secureRandom->generate(21,
-			ISecureRandom::CHAR_DIGITS,
-			ISecureRandom::CHAR_LOWER, ISecureRandom::CHAR_UPPER);
+			ISecureRandom::CHAR_DIGITS . ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_UPPER);
 		$this->config->setUserValue($userId, 'owncloud',
 			'lostpassword', $this->timeFactory->getTime() . ':' . $token);
 
@@ -126,18 +125,20 @@ class UserSendMailService {
 		$splittedToken = \explode(':', $this->config->getUserValue($user->getUID(), 'owncloud', 'lostpassword', null));
 		if (\count($splittedToken) !== 2) {
 			$this->config->deleteUserValue($user->getUID(), 'owncloud', 'lostpassword');
-			throw new InvalidUserTokenException('The token provided is invalid.');
+			throw new InvalidUserTokenException($this->l10n->t('The token provided is invalid.'));
 		}
 
 		//The value 43200 = 60*60*12 = 1/2 day
-		if ($splittedToken[0] < ($this->timeFactory->getTime() - (int)$this->config->getAppValue('core', 'token_expire_time', '43200')) ||
+		$tokenExpireTime = (int)$this->config->getAppValue('core', 'token_expire_time', '43200');
+		$lastValidTimeForToken = $this->timeFactory->getTime() - $tokenExpireTime;
+		if ($splittedToken[0] < $lastValidTimeForToken ||
 			$user->getLastLogin() > $splittedToken[0]) {
 			$this->config->deleteUserValue($user->getUID(), 'owncloud', 'lostpassword');
-			throw new UserTokenExpiredException('The token provided had expired.');
+			throw new UserTokenExpiredException($this->l10n->t('The token provided had expired.'));
 		}
 
 		if (!\hash_equals($splittedToken[1], $token)) {
-			throw new UserTokenMismatchException('The token provided is invalid.');
+			throw new UserTokenMismatchException($this->l10n->t('The token provided is invalid.'));
 		}
 	}
 
@@ -150,25 +151,24 @@ class UserSendMailService {
 	 */
 	public function sendNotificationMail(IUser $user) {
 		$email = $user->getEMailAddress();
-		$fromMailAddress = Util::getDefaultEmailAddress('no-reply');
 
 		if ($email !== '') {
+			$fromMailAddress = Util::getDefaultEmailAddress('no-reply');
+			$tmpl = new \OC_Template('core', 'lostpassword/notify');
+			$msg = $tmpl->fetchPage();
+			$tmplAlt = new \OC_Template('core', 'lostpassword/altnotify');
+			$msgAlt = $tmplAlt->fetchPage();
+			$message = $this->mailer->createMessage();
+			$message->setTo([$email => $user->getUID()]);
+			$message->setSubject($this->l10n->t('%s password changed successfully', [$this->defaults->getName()]));
+			$message->setHtmlBody($msg);
+			$message->setPlainBody($msgAlt);
+			$message->setFrom([$fromMailAddress => $this->defaults->getName()]);
 			try {
-				$tmpl = new \OC_Template('core', 'lostpassword/notify');
-				$msg = $tmpl->fetchPage();
-				$tmplAlt = new \OC_Template('core', 'lostpassword/altnotify');
-				$msgAlt = $tmplAlt->fetchPage();
-
-				$message = $this->mailer->createMessage();
-				$message->setTo([$email => $user->getUID()]);
-				$message->setSubject($this->l10n->t('%s password changed successfully', [$this->defaults->getName()]));
-				$message->setHtmlBody($msg);
-				$message->setPlainBody($msgAlt);
-				$message->setFrom([$fromMailAddress => $this->defaults->getName()]);
 				$this->mailer->send($message);
 				return true;
 			} catch (\Exception $exception) {
-				throw new EmailSendFailedException("Email could not be sent.");
+				throw new EmailSendFailedException($this->l10n->t("Email could not be sent."));
 			}
 		}
 		return false;

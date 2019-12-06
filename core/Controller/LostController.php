@@ -46,8 +46,6 @@ use OC\User\Session;
 /**
  * Class LostController
  *
- * Successfully changing a password will emit the post_passwordReset hook.
- *
  * @package OC\Core\Controller
  */
 class LostController extends Controller {
@@ -252,8 +250,7 @@ class LostController extends Controller {
 				throw new \Exception();
 			}
 
-			\OC_Hook::emit('\OC\Core\LostPassword\Controller\LostController', 'post_passwordReset', ['uid' => $userId, 'password' => $password]);
-			@\OC_User::unsetMagicInCookie();
+			$this->userSession->unsetMagicInCookie();
 		} catch (\Exception $e) {
 			return $this->error($e->getMessage());
 		}

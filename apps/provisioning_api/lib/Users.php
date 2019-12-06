@@ -33,7 +33,6 @@ use OC\OCS\Result;
 use OC\User\Service\CreateUserService;
 use OC_Helper;
 use OCP\API;
-use OCP\Files\FileInfo;
 use OCP\Files\NotFoundException;
 use OCP\IGroup;
 use OCP\IGroupManager;
@@ -145,11 +144,6 @@ class Users {
 			return new Result(null, API::RESPOND_UNAUTHORISED);
 		}
 
-		if ($this->userManager->userExists($userId)) {
-			$this->logger->error('Failed addUser attempt: User already exists.', ['app' => 'ocs_api']);
-			return new Result(null, 102, 'User already exists');
-		}
-
 		if (\is_array($groups) && (\count($groups) > 0)) {
 			foreach ($groups as $group) {
 				if (!$this->groupManager->groupExists($group)) {
@@ -163,6 +157,11 @@ class Users {
 			if (!$isAdmin) {
 				return new Result(null, 106, 'no group specified (required for subadmins)');
 			}
+		}
+
+		if ($this->userManager->userExists($userId)) {
+			$this->logger->error('Failed addUser attempt: User already exists.', ['app' => 'ocs_api']);
+			return new Result(null, 102, 'User already exists');
 		}
 
 		try {

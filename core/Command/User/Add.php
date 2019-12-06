@@ -91,6 +91,13 @@ class Add extends Command {
 			);
 	}
 
+	/**
+	 * @param InputInterface $input
+	 * @param OutputInterface $output
+	 * @return int
+	 * @throws CannotCreateUserException
+	 * @throws UserAlreadyExistsException
+	 */
 	protected function execute(InputInterface $input, OutputInterface $output) {
 		$uid = $input->getArgument('uid');
 		$email = $input->getOption('email');
@@ -110,7 +117,7 @@ class Add extends Command {
 		$password = '';
 		if ($passwordFromEnv) {
 			$password = \getenv('OC_PASS');
-			if (!$password) {
+			if ($password === false || $password === "") {
 				$output->writeln('<error>--password-from-env given, but OC_PASS is empty!</error>');
 				return 1;
 			}
@@ -135,12 +142,6 @@ class Add extends Command {
 			$user = $this->createUserService->createUser(['username' => $uid, 'password' => $password, 'email' => $email]);
 		} catch (InvalidEmailException $e) {
 			$output->writeln('<error>Invalid email address supplied</error>');
-			return 1;
-		} catch (CannotCreateUserException $e) {
-			$output->writeln("<error>" . $e->getMessage() .  "</error>");
-			return 1;
-		} catch (UserAlreadyExistsException $e) {
-			$output->writeln("<error>" . $e->getMessage() .  "</error>");
 			return 1;
 		}
 

@@ -24,6 +24,7 @@ namespace Tests\Core\Controller;
 use OC\AppFramework\Http;
 use OC\Core\Controller\UserController;
 use OC\User\Service\UserSendMailService;
+use OC\User\Session;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IL10N;
@@ -60,6 +61,8 @@ class UserControllerTest extends TestCase {
 	private $logger;
 	/** @var IL10N | \PHPUnit_Framework_MockObject_MockObject */
 	private $l10n;
+	/** @var Session | \PHPUnit_Framework_MockObject_MockObject */
+	private $session;
 	/** @var UserController */
 	private $userController;
 
@@ -73,9 +76,10 @@ class UserControllerTest extends TestCase {
 		$this->urlGenerator = $this->createMock(IURLGenerator::class);
 		$this->logger = $this->createMock(ILogger::class);
 		$this->l10n = $this->createMock(IL10N::class);
+		$this->session = $this->createMock(Session::class);
 		$this->userController = new UserController('core', $this->request,
 			$this->userManager, $this->defaults, $this->userSendMailService,
-			$this->urlGenerator, $this->logger, $this->l10n);
+			$this->urlGenerator, $this->logger, $this->l10n, $this->session);
 	}
 
 	public function testSetPasswordForm() {

@@ -4,6 +4,7 @@
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  * @author Sujith Haridasan <sharidasan@owncloud.com>
+ * @author Semih Serhat Karakaya <karakayasemi@itu.edu.tr>
  *
  * @copyright Copyright (c) 2018, ownCloud GmbH
  * @license AGPL-3.0
@@ -25,6 +26,7 @@
 namespace OC\Core\Controller;
 
 use OC\User\Service\UserSendMailService;
+use OC\User\Session;
 use \OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use \OCP\AppFramework\Http\JSONResponse;
@@ -38,14 +40,10 @@ use OCP\User\Exceptions\UserTokenException;
 use OCP\User\Exceptions\UserTokenExpiredException;
 
 class UserController extends Controller {
-	/**
-	 * @var \OCP\IUserManager
-	 */
+	/** @var \OCP\IUserManager */
 	protected $userManager;
 
-	/**
-	 * @var \OC_Defaults
-	 */
+	/** @var \OC_Defaults */
 	protected $defaults;
 
 	/** @var UserSendMailService  */
@@ -60,6 +58,9 @@ class UserController extends Controller {
 	/** @var IL10N  */
 	private $l10n;
 
+	/** @var Session  */
+	private $session;
+
 	/**
 	 * UserController constructor.
 	 *
@@ -70,7 +71,8 @@ class UserController extends Controller {
 	 * @param UserSendMailService $userSendMailService
 	 * @param IURLGenerator $urlGenerator
 	 * @param ILogger $logger
-	 * @param IL10N $l10n
+	 * @param IL10N $l10n,
+	 * @param Session $session
 	 */
 	public function __construct($appName,
 								IRequest $request,
@@ -78,7 +80,7 @@ class UserController extends Controller {
 								$defaults,
 								UserSendMailService $userSendMailService,
 								IURLGenerator $urlGenerator, ILogger $logger,
-								IL10N $l10n
+								IL10N $l10n, Session $session
 	) {
 		parent::__construct($appName, $request);
 		$this->userManager = $userManager;
@@ -87,6 +89,7 @@ class UserController extends Controller {
 		$this->urlGenerator = $urlGenerator;
 		$this->logger = $logger;
 		$this->l10n = $l10n;
+		$this->session = $session;
 	}
 
 	/**
@@ -147,7 +150,7 @@ class UserController extends Controller {
 			return new TemplateResponse(
 				'core', 'error',
 				[
-					"errors" => [["error" => $this->l10n->t($e->getMessage())]]
+					"errors" => [["error" => $e->getMessage()]]
 				], 'guest'
 			);
 		}
@@ -173,7 +176,7 @@ class UserController extends Controller {
 		$user = $this->userManager->get($userId);
 
 		if ($user === null) {
-			$this->logger->error('User: ' . $userId . ' does not exist', ['app' => 'core']);
+			$this->logger->error("Failed to create activation link. User $userId does not exists", ['app' => 'core']);
 			return new TemplateResponse(
 				'core', 'error',
 				[
@@ -188,7 +191,7 @@ class UserController extends Controller {
 			return new TemplateResponse(
 				'core', 'error',
 				[
-					"errors" => [["error" => $this->l10n->t('Failed to create activation link. Please contact your administrator.', [$userId])]]
+					"errors" => [["error" => $this->l10n->t('Failed to create activation link for %s. Please contact your administrator.', [$userId])]]
 				],
 				'guest'
 			);
@@ -231,7 +234,7 @@ class UserController extends Controller {
 			return new JSONResponse(
 				[
 					'status' => 'error',
-					'message' => $this->l10n->t('Failed to set password. Please contact the administrator.', [$userId]),
+					'message' => $this->l10n->t('Failed to set password for %s. Please contact the administrator.', [$userId]),
 					'type' => 'usererror'
 				], Http::STATUS_NOT_FOUND
 			);
@@ -245,14 +248,12 @@ class UserController extends Controller {
 				return new JSONResponse(
 					[
 						'status' => 'error',
-						'message' => $this->l10n->t('Failed to set password. Please contact your administrator.', [$userId]),
+						'message' => $this->l10n->t('Failed to set password for %s. Please contact your administrator.', [$userId]),
 						'type' => 'passwordsetfailed'
 					], Http::STATUS_FORBIDDEN
 				);
 			}
-
-			\OC_Hook::emit('\OC\Core\LostPassword\Controller\LostController', 'post_passwordReset', ['uid' => $userId, 'password' => $password]);
-			@\OC_User::unsetMagicInCookie();
+			$this->session->unsetMagicInCookie();
 		} catch (UserTokenException $e) {
 			$this->logger->logException($e, ['app' => 'core']);
 			return new JSONResponse(
@@ -267,11 +268,11 @@ class UserController extends Controller {
 		try {
 			$this->userSendMailService->sendNotificationMail($user);
 		} catch (EmailSendFailedException $e) {
-			$this->logger->logException($e, ['app' => 'user_management']);
+			$this->logger->logException($e, ['app' => 'core']);
 			return new JSONResponse(
 				[
 					'status' => 'error',
-					'message' => $this->l10n->t('Failed to send email. Please contact your administrator.'),
+					'message' => $this->l10n->t('Password set successfully but failed to send email. Please contact your administrator for details.'),
 					'type' => 'emailsendfailed'
 				], Http::STATUS_INTERNAL_SERVER_ERROR
 			);

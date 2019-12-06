@@ -23,20 +23,19 @@
 				passwordObj.val('');
 				retypePasswordObj.val('');
 				passwordObj.parent().addClass('shake');
-				$('#message').addClass('warning');
-				$('#message').text('Passwords do not match');
-				$('#message').show();
+				$('#message').addClass('warning')
+					.text('Passwords do not match')
+					.show();
 				passwordObj.focus();
 			}
 		},
 
 		_onSetPasswordFail: function(result) {
-			var responseObj = JSON.parse(result.responseText);
+			var response = JSON.parse(result.responseText);
 			var errorObject = $('#error-message');
-			var showErrorMessage = false;
 
 			var errorMessage;
-			errorMessage = responseObj.message;
+			errorMessage = response.message;
 
 			if (!errorMessage) {
 				errorMessage = t('core', 'Failed to set password. Please contact your administrator.');
@@ -49,15 +48,15 @@
 
 		_resetDone : function(result){
 			if (result && result.status === 'success') {
-				var getRootPath = OC.getRootPath();
-				if (getRootPath === '') {
+				var rootPath = OC.getRootPath();
+				if (rootPath === '') {
 					/**
 					 * If owncloud is not run inside subfolder, the getRootPath
 					 * will return empty string
 					 */
-					getRootPath = "/";
+					rootPath = "/";
 				}
-				OC.redirect(getRootPath);
+				OC.redirect(rootPath);
 			}
 		}
 	};
@@ -76,8 +75,7 @@ $(document).ready(function () {
 		 Else it should not.
 		 */
 		if (($('#password').val().length >= 0) && ($('#retypepassword').val().length === 0)) {
-			$('#message').removeClass('warning');
-			$('#message').text('');
+			$('#message').removeClass('warning').text('');
 		}
 	});
 });

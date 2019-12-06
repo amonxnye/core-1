@@ -92,12 +92,17 @@ class CreateUserService {
 	 * @throws UserAlreadyExistsException
 	 */
 	public function createUser($arguments) {
-		$username = $password = $email = '';
-		if (\array_key_exists('username', $arguments)) {
+		$password = $email = '';
+		if (isset($arguments['username'])) {
 			$username = $arguments['username'];
 		} else {
 			throw new CannotCreateUserException("Unable to create user due to missing user name");
 		}
+
+		if ($this->userManager->userExists($username)) {
+			throw new UserAlreadyExistsException('A user with that name already exists.');
+		}
+
 		if (\array_key_exists('password', $arguments)) {
 			$password = $arguments['password'];
 		}
@@ -107,10 +112,6 @@ class CreateUserService {
 
 		if ($email !== '' && !$this->userSendMailService->validateEmailAddress($email)) {
 			throw new InvalidEmailException("Invalid mail address");
-		}
-
-		if ($this->userManager->userExists($username)) {
-			throw new UserAlreadyExistsException('A user with that name already exists.');
 		}
 
 		try {
@@ -125,7 +126,7 @@ class CreateUserService {
 			}
 			$user = $this->userManager->createUser($username, $password);
 		} catch (\Exception $exception) {
-			throw new CannotCreateUserException("Unable to create user due to exception: {$exception->getMessage()}");
+			throw new CannotCreateUserException($exception->getMessage());
 		}
 
 		if ($user === false) {
@@ -158,6 +159,7 @@ class CreateUserService {
 	 *
 	 * The groups argument could not be empty and it is a list of group names. For example:
 	 *  $groups = ['group1', 'group2']
+	 * If a group does not exist, the function creates a group wih given name.
 	 *
 	 * This function returns the list of group(s) which failed to add user to the group(s)
 	 *
@@ -169,11 +171,11 @@ class CreateUserService {
 	public function addUserToGroups(IUser $user, array $groups, $checkInGroup = true) {
 		$failedToAdd = [];
 
-		if (\is_array($groups) && \count($groups) > 0) {
+		if (\count($groups) > 0) {
 			foreach ($groups as $groupName) {
 				$groupObject = $this->groupManager->get($groupName);
 
-				if (empty($groupObject)) {
+				if ($groupObject === null) {
 					$groupObject = $this->groupManager->createGroup($groupName);
 				}
 				$groupObject->addUser($user);
