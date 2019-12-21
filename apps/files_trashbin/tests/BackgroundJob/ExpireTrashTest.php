@@ -24,12 +24,16 @@
 namespace OCA\Files_Trashbin\Tests\BackgroundJob;
  
 use OCA\Files_Trashbin\BackgroundJob\ExpireTrash;
+use OCA\Files_Trashbin\TrashExpiryManager;
+use OCP\IConfig;
+use OCP\IUserManager;
 
 class ExpireTrashTest extends \Test\TestCase {
 	public function testConstructAndRun() {
 		$backgroundJob = new ExpireTrash(
-			$this->createMock('OCP\IUserManager'),
-			$this->getMockBuilder('OCA\Files_Trashbin\Expiration')->disableOriginalConstructor()->getMock()
+			$this->createMock(IConfig::class),
+			$this->createMock(IUserManager::class),
+			$this->getMockBuilder(TrashExpiryManager::class)->disableOriginalConstructor()->getMock()
 		);
 
 		$jobList = $this->createMock('\OCP\BackgroundJob\IJobList');

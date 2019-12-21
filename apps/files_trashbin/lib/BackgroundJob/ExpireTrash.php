@@ -24,6 +24,8 @@
 
 namespace OCA\Files_Trashbin\BackgroundJob;
 
+use OCA\Files_Trashbin\Expiration;
+use OCA\Files_Trashbin\Quota;
 use OCA\Files_Trashbin\TrashExpiryManager;
 use OCP\IConfig;
 use OCP\IUser;
@@ -70,11 +72,18 @@ class ExpireTrash extends \OC\BackgroundJob\TimedJob {
 
 	protected function fixDIForJobs() {
 		$this->userManager = \OC::$server->getUserManager();
-		$this->trashExpiryManager = new TrashExpiryManager(
-			$this->userManager,
+		$expiration = new Expiration(
 			\OC::$server->getConfig(),
-			\OC::$server->getTimeFactory(),
-			\OC::$server->getLogger(),
+			\OC::$server->getTimeFactory()
+		);
+		$quota = new Quota(
+			$this->userManager,
+			\OC::$server->getConfig()
+		);
+		$this->trashExpiryManager = new TrashExpiryManager(
+			$expiration,
+			$quota,
+			\OC::$server->getLogger()
 		);
 	}
 
@@ -91,9 +100,7 @@ class ExpireTrash extends \OC\BackgroundJob\TimedJob {
 		$offset = $this->config->getAppValue('files_trashbin', 'cronjob_trash_expiry_offset', 0);
 
 		$count = 0;
-		$this->userManager->callForUsers(function (IUser $user) use (&$count){
-			\OCP\Util::writeLog('versions_testing', "memory " . $count . " : used " . memory_get_usage(false) . " / allocated " .memory_get_usage(true) . " B", \OCP\Util::ERROR);
-
+		$this->userManager->callForUsers(function (IUser $user) use (&$count) {
 			$uid = $user->getUID();
 			if (!$this->setupFS($uid)) {
 				return;
