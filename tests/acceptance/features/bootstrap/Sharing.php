@@ -55,6 +55,14 @@ trait Sharing {
 	private $localLastShareTime = null;
 
 	/**
+	 * @var array
+	 */
+	private $shareFields = array(
+		'path', 'name', 'publicUpload', 'password', 'expireDate',
+		'expireDateAsString', 'permissions', 'shareWith', 'shareType'
+	);
+
+	/**
 	 * @return SimpleXMLElement
 	 */
 	public function getLastShareData() {
@@ -194,7 +202,7 @@ trait Sharing {
 		$this->verifyTableNodeRows(
 			$body,
 			['path'],
-			['name', 'shareWith', 'publicUpload', 'password', 'permissions', 'shareType', 'expireDate']
+			$this->shareFields
 		);
 		$fd = $body->getRowsHash();
 		$fd['name'] = \array_key_exists('name', $fd) ? $fd['name'] : null;
@@ -1399,6 +1407,7 @@ trait Sharing {
 	public function theResponseWhenUserGetsInfoOfLastShareShouldInclude(
 		$user, $body
 	) {
+		$this->verifyTableNodeRows($body, [], $this->shareFields);
 		$this->userGetsInfoOfLastShareUsingTheSharingApi($user);
 		$this->theHTTPStatusCodeShouldBe(
 			200,
@@ -1534,15 +1543,14 @@ trait Sharing {
 	 * @return void
 	 */
 	public function checkFields($body) {
-		if ($body instanceof TableNode) {
-			$fd = $body->getRowsHash();
-			foreach ($fd as $field => $value) {
-				$value = $this->replaceValuesFromTable($field, $value);
-				Assert::assertTrue(
-					$this->isFieldInResponse($field, $value),
-					"$field doesn't have value '$value'"
-				);
-			}
+		$this->verifyTableNodeColumnsCount($body, 2);
+		$fd = $body->getRowsHash();
+		foreach ($fd as $field => $value) {
+			$value = $this->replaceValuesFromTable($field, $value);
+			Assert::assertTrue(
+				$this->isFieldInResponse($field, $value),
+				"$field doesn't have value '$value'"
+			);
 		}
 	}
 

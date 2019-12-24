@@ -1077,6 +1077,7 @@ trait WebDav {
 	 * @return void
 	 */
 	public function jobStatusValuesShouldMatchRegEx($user, $table) {
+		$this->verifyTableNodeColumnsCount($table, 2);
 		$url = $this->response->getHeader("OC-JobStatus-Location");
 		$url = $this->getBaseUrlWithoutPath() . $url;
 		$response = HttpRequestHelper::get($url, $user, $this->getPasswordForUser($user));
@@ -1233,11 +1234,7 @@ trait WebDav {
 	public function checkElementList(
 		$user, $elements, $expectedToBeListed = true
 	) {
-		if (!($elements instanceof TableNode)) {
-			throw new InvalidArgumentException(
-				'$expectedElements has to be an instance of TableNode'
-			);
-		}
+		$this->verifyTableNodeColumnsCount($elements, 1);
 		$responseXmlObject = $this->listFolder($user, "/", 5);
 		$elementRows = $elements->getRows();
 		$elementsSimplified = $this->simplifyArray($elementRows);
@@ -2633,6 +2630,7 @@ trait WebDav {
 	 * @throws \Exception
 	 */
 	public function headersShouldMatchRegularExpressions(TableNode $table) {
+		$this->verifyTableNodeColumnsCount($table, 2);
 		foreach ($table->getTable() as $header) {
 			$headerName = $header[0];
 			$expectedHeaderValue = $header[1];
