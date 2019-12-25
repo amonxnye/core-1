@@ -3,6 +3,8 @@ Changelog for ownCloud Core [10.4.0] (UNRELEASED)
 The following sections list the changes in ownCloud core 10.4.0 relevant to
 ownCloud admins and users.
 
+[10.4.0]: https://github.com/owncloud/core/compare/v10.3.2...v10.4.0
+
 Summary
 -------
 
@@ -318,6 +320,8 @@ Changelog for ownCloud Core [10.3.2] (2019-12-04)
 =======================================
 The following sections list the changes in ownCloud core 10.3.2 relevant to
 ownCloud admins and users.
+
+[10.3.2]: https://github.com/owncloud/core/compare/v10.3.1...v10.3.2
 
 Summary
 -------
@@ -1797,8 +1801,6 @@ Details
 - provisioning API now also returns the user's home path: [#26850](https://github.com/owncloud/core/issues/26850)
 - web updater shows link to changelog in admin page: [#26796](https://github.com/owncloud/core/issues/26796)
 
-[unreleased]: https://github.com/owncloud/core/compare/v10.3.2...master
-[10.3.2]: https://github.com/owncloud/core/compare/v10.3.1...v10.3.2
 [10.3.1]: https://github.com/owncloud/core/compare/v10.3.0...v10.3.1
 [10.3.0]: https://github.com/owncloud/core/compare/v10.2.1...v10.3.0
 [10.2.1]: https://github.com/owncloud/core/compare/v10.2.0...v10.2.1
